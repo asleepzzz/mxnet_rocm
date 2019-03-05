@@ -32,7 +32,7 @@
 
 /*! \brief Macros/inlines to assist CLion to parse Cuda files (*.cu, *.cuh) */
 #ifdef __JETBRAINS_IDE__
-#define __CUDACC__ 1
+#define __HIPCC__ 1
 #define __host__
 #define __device__
 #define __global__
@@ -49,7 +49,7 @@ extern __cuda_fake_struct blockIdx;
 
 #if MXNET_USE_CUDA
 
-#include <cuda_runtime.h>
+#include <hip/hip_runtime.h>
 #include <cublas_v2.h>
 #include <curand.h>
 
@@ -57,7 +57,7 @@ extern __cuda_fake_struct blockIdx;
  * \brief When compiling a __device__ function, check that the architecture is >= Kepler (3.0)
  *        Note that __CUDA_ARCH__ is not defined outside of a __device__ function
  */
-#ifdef __CUDACC__
+#ifdef __HIPCC__
 inline __device__ bool __is_supported_cuda_architecture() {
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 300
 #error "Fermi and earlier GPU architectures are not supported (architecture versions less than 3.0)"
@@ -66,7 +66,7 @@ inline __device__ bool __is_supported_cuda_architecture() {
   return true;
 #endif  // __CUDA_ARCH__ < 300
 }
-#endif  // __CUDACC__
+#endif  // __HIPCC__
 
 /*!
  * \brief Check CUDA error.
@@ -74,8 +74,8 @@ inline __device__ bool __is_supported_cuda_architecture() {
  */
 #define CHECK_CUDA_ERROR(msg)                                                \
   {                                                                          \
-    cudaError_t e = cudaGetLastError();                                      \
-    CHECK_EQ(e, cudaSuccess) << (msg) << " CUDA: " << cudaGetErrorString(e); \
+    hipError_t e = hipGetLastError();                                      \
+    CHECK_EQ(e, hipSuccess) << (msg) << " CUDA: " << hipGetErrorString(e); \
   }
 
 /*!
@@ -86,9 +86,9 @@ inline __device__ bool __is_supported_cuda_architecture() {
  */
 #define CUDA_CALL(func)                                            \
   {                                                                \
-    cudaError_t e = (func);                                        \
-    CHECK(e == cudaSuccess || e == cudaErrorCudartUnloading)       \
-        << "CUDA: " << cudaGetErrorString(e);                      \
+    hipError_t e = (func);                                        \
+    CHECK(e == hipSuccess || e == cudaErrorCudartUnloading)       \
+        << "CUDA: " << hipGetErrorString(e);                      \
   }
 
 /*!
@@ -291,7 +291,7 @@ class DeviceStore {
     current_device_(requested_device),
     restore_(restore) {
     if (restore_)
-      CUDA_CALL(cudaGetDevice(&restore_device_));
+      CUDA_CALL(hipGetDevice(&restore_device_));
     if (requested_device != restore_device_) {
       SetDevice(requested_device);
     }
@@ -302,12 +302,12 @@ class DeviceStore {
         current_device_ != restore_device_ &&
         current_device_ != -1 &&
         restore_device_ != -1)
-      CUDA_CALL(cudaSetDevice(restore_device_));
+      CUDA_CALL(hipSetDevice(restore_device_));
   }
 
   void SetDevice(int device) {
     if (device != -1) {
-      CUDA_CALL(cudaSetDevice(device));
+      CUDA_CALL(hipSetDevice(device));
       current_device_ = device;
     }
   }
@@ -329,8 +329,8 @@ class DeviceStore {
  */
 inline int ComputeCapabilityMajor(int device_id) {
   int major = 0;
-  CUDA_CALL(cudaDeviceGetAttribute(&major,
-                                   cudaDevAttrComputeCapabilityMajor, device_id));
+  CUDA_CALL(hipDeviceGetAttribute(&major,
+                                   hipDeviceAttributeComputeCapabilityMajor, device_id));
   return major;
 }
 
@@ -341,8 +341,8 @@ inline int ComputeCapabilityMajor(int device_id) {
  */
 inline int ComputeCapabilityMinor(int device_id) {
   int minor = 0;
-  CUDA_CALL(cudaDeviceGetAttribute(&minor,
-                                   cudaDevAttrComputeCapabilityMinor, device_id));
+  CUDA_CALL(hipDeviceGetAttribute(&minor,
+                                   hipDeviceAttributeComputeCapabilityMinor, device_id));
   return minor;
 }
 
@@ -443,7 +443,7 @@ inline cublasMath_t SetCublasMathMode(cublasHandle_t blas_handle, cublasMath_t n
 
 #define CUDNN_CALL(func)                                                      \
   {                                                                           \
-    cudnnStatus_t e = (func);                                                 \
+    miopenStatus_t e = (func);                                                 \
     CHECK_EQ(e, CUDNN_STATUS_SUCCESS) << "cuDNN: " << cudnnGetErrorString(e); \
   }
 

@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -52,7 +53,7 @@ __global__ void AddTakeGradLargeBatchKernel(DType* dst,
                                            const DType *src,
                                            int ymax, int xmax) {
   // Size of the shared memory is [blockDim.x*SZ*blockDim.y]*sizeof(DType)
-  extern __shared__ char sh_grad_weight_char[];
+  HIP_DYNAMIC_SHARED( char, sh_grad_weight_char)
   DType* sh_grad_weight = (DType*)sh_grad_weight_char;
 
   int iidx_end = (idx_start == NULL) ? ymax : *idx_start_size_ptr;
@@ -210,7 +211,7 @@ inline void AddTakeGradLargeBatchKernelLaunch(mshadow::Tensor<gpu, 2, DType> dst
                                               IndexType* sum_counts_ptr,
                                               int* num_runs_ptr,
                                               const mshadow::index_t num_rows) {
-  cudaStream_t stream = mshadow::Stream<gpu>::GetStream(dst.stream_);
+  hipStream_t stream = mshadow::Stream<gpu>::GetStream(dst.stream_);
   const int num_unique_est = min(num_rows, src.size(0));
   const int max_nthread = 128;
   const int num_y = max(static_cast<int>(src.size(0))/num_unique_est, 1);
@@ -230,33 +231,25 @@ inline void AddTakeGradLargeBatchKernelLaunch(mshadow::Tensor<gpu, 2, DType> dst
 
   switch (SZ) {
     case 1:
-    AddTakeGradLargeBatchKernel<1, DType>
-        <<<dimGrid, dimBlock, shmem_size, stream>>>
-        (dst.dptr_, sum_counts_ptr, num_runs_ptr,
+    hipLaunchKernelGGL((AddTakeGradLargeBatchKernel<1, DType>), dim3(dimGrid), dim3(dimBlock), shmem_size, stream, dst.dptr_, sum_counts_ptr, num_runs_ptr,
          sorted.dptr_, index.dptr_, src.dptr_,
          static_cast<int>(src.size(0)),
          static_cast<int>(src.size(1)));
     break;
     case 2:
-    AddTakeGradLargeBatchKernel<2, DType>
-        <<<dimGrid, dimBlock, shmem_size, stream>>>
-        (dst.dptr_, sum_counts_ptr, num_runs_ptr,
+    hipLaunchKernelGGL((AddTakeGradLargeBatchKernel<2, DType>), dim3(dimGrid), dim3(dimBlock), shmem_size, stream, dst.dptr_, sum_counts_ptr, num_runs_ptr,
          sorted.dptr_, index.dptr_, src.dptr_,
          static_cast<int>(src.size(0)),
          static_cast<int>(src.size(1)));
     break;
     case 3:
-    AddTakeGradLargeBatchKernel<3, DType>
-        <<<dimGrid, dimBlock, shmem_size, stream>>>
-        (dst.dptr_, sum_counts_ptr, num_runs_ptr,
+    hipLaunchKernelGGL((AddTakeGradLargeBatchKernel<3, DType>), dim3(dimGrid), dim3(dimBlock), shmem_size, stream, dst.dptr_, sum_counts_ptr, num_runs_ptr,
          sorted.dptr_, index.dptr_, src.dptr_,
          static_cast<int>(src.size(0)),
          static_cast<int>(src.size(1)));
     break;
     case 4:
-    AddTakeGradLargeBatchKernel<4, DType>
-        <<<dimGrid, dimBlock, shmem_size, stream>>>
-        (dst.dptr_, sum_counts_ptr, num_runs_ptr,
+    hipLaunchKernelGGL((AddTakeGradLargeBatchKernel<4, DType>), dim3(dimGrid), dim3(dimBlock), shmem_size, stream, dst.dptr_, sum_counts_ptr, num_runs_ptr,
          sorted.dptr_, index.dptr_, src.dptr_,
          static_cast<int>(src.size(0)),
          static_cast<int>(src.size(1)));
@@ -280,7 +273,7 @@ inline void AddTakeGradLargeBatch(mshadow::Tensor<gpu, 2, DType> dst,
   CHECK_EQ(index.CheckContiguous(), true);
   CHECK_EQ(src.CheckContiguous(), true);
   // const int kWarpBits = kMemUnitBits;
-  cudaStream_t stream = mshadow::Stream<gpu>::GetStream(dst.stream_);
+  hipStream_t stream = mshadow::Stream<gpu>::GetStream(dst.stream_);
   IndexType* sum_counts_ptr = NULL;
   int* num_runs_ptr = NULL;
   if (dst.size(0)*4 < src.size(0) && workspace != NULL) {

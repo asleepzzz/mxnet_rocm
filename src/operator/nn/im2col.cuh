@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /*!
  ******************* BEGIN Caffe Copyright Notice and Disclaimer ****************
  *
@@ -129,8 +130,7 @@ inline void im2col_gpu(mshadow::Stream<gpu>* s,
   int num_kernels = channels * height_col * width_col;
   using namespace mxnet_op;
   // NOLINT_NEXT_LINE(whitespace/operators)
-  im2col_gpu_kernel<DType><<<cuda_get_num_blocks(num_kernels), mshadow::cuda::kBaseThreadNum,
-                             0, mshadow::Stream<gpu>::GetStream(s)>>>(
+  hipLaunchKernelGGL((im2col_gpu_kernel<DType>), dim3(cuda_get_num_blocks(num_kernels)), dim3(mshadow::cuda::kBaseThreadNum), 0, mshadow::Stream<gpu>::GetStream(s), 
       num_kernels, data_im, height, width, kernel_h, kernel_w, pad_h,
       pad_w, stride_h, stride_w, dilation_h, dilation_w, height_col,
       width_col, data_col);
@@ -339,8 +339,7 @@ inline void col2im_gpu(mshadow::Stream<gpu>* s, const DType* data_col, const int
   // To avoid involving atomic operations, we will launch one kernel per
   // bottom dimension, and then in the kernel add up the top dimensions.
   // NOLINT_NEXT_LINE(whitespace/operators)
-  col2im_gpu_kernel<DType><<<cuda_get_num_blocks(num_kernels), mshadow::cuda::kBaseThreadNum,
-                             0, mshadow::Stream<gpu>::GetStream(s)>>>(
+  hipLaunchKernelGGL((col2im_gpu_kernel<DType>), dim3(cuda_get_num_blocks(num_kernels)), dim3(mshadow::cuda::kBaseThreadNum), 0, mshadow::Stream<gpu>::GetStream(s), 
       num_kernels, data_col, height, width, channels, kernel_h, kernel_w,
       pad_h, pad_w, stride_h, stride_w, dilation_h, dilation_w,
       height_col, width_col, data_im, req);
@@ -491,8 +490,7 @@ inline void col2im(mshadow::Stream<gpu>* s,
     // To avoid involving atomic operations, we will launch one kernel per
     // bottom dimension, and then in the kernel add up the top dimensions.
     // NOLINT_NEXT_LINE(whitespace/operators)
-    col2im_gpu_kernel<DType><<<cuda_get_num_blocks(im_size), mshadow::cuda::kBaseThreadNum,
-                               0, mshadow::Stream<gpu>::GetStream(s)>>>(
+    hipLaunchKernelGGL((col2im_gpu_kernel<DType>), dim3(cuda_get_num_blocks(im_size)), dim3(mshadow::cuda::kBaseThreadNum), 0, mshadow::Stream<gpu>::GetStream(s), 
         im_size, data_col, im_shape[1], im_shape[2], im_shape[3],
         kernel_shape[0], kernel_shape[1], pad[0], pad[1], stride[0], stride[1],
         dilation[0], dilation[1], col_shape[1], col_shape[2], data_im, req);

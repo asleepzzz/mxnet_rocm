@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -50,8 +51,7 @@ void RandGenerator<gpu, float>::Seed(mshadow::Stream<gpu> *s, uint32_t seed) {
   int ngrid = std::min(kMaxGridNum,
                        (RandGenerator<gpu, float>::kNumRandomStates + kBaseThreadNum - 1) /
                          kBaseThreadNum);
-  rand_generator_seed_kernel
-      <<<ngrid, kBaseThreadNum, 0, mshadow::Stream<gpu>::GetStream(s)>>>(
+  hipLaunchKernelGGL((rand_generator_seed_kernel), dim3(ngrid), dim3(kBaseThreadNum), 0, mshadow::Stream<gpu>::GetStream(s), 
           states_,
           RandGenerator<gpu, float>::kNumRandomStates,
           seed);
@@ -61,13 +61,13 @@ void RandGenerator<gpu, float>::Seed(mshadow::Stream<gpu> *s, uint32_t seed) {
 
 template<>
 void RandGenerator<gpu, float>::AllocState(RandGenerator<gpu> *inst) {
-  CUDA_CALL(cudaMalloc(&inst->states_,
+  CUDA_CALL(hipMalloc(&inst->states_,
                        kNumRandomStates * sizeof(curandStatePhilox4_32_10_t)));
 }
 
 template<>
 void RandGenerator<gpu, float>::FreeState(RandGenerator<gpu> *inst) {
-  CUDA_CALL(cudaFree(inst->states_));
+  CUDA_CALL(hipFree(inst->states_));
 }
 
 }  // namespace random

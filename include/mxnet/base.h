@@ -24,7 +24,7 @@
  */
 #ifndef MXNET_BASE_H_
 #define MXNET_BASE_H_
-
+#include <hip/hip_runtime.h>
 #include "dmlc/base.h"
 #include <string>
 #include "dmlc/io.h"
@@ -245,7 +245,7 @@ class GPUAuxStream {
       aux_stream_ = mshadow::NewStream<gpu>(primary_has_blas_handle,
                                             primary_has_dnn_handle,
                                             primary_stream->dev_id);
-      MSHADOW_CUDA_CALL(cudaEventCreateWithFlags(&gpu_stream_sync_event_, cudaEventDisableTiming));
+      MSHADOW_CUDA_CALL(hipEventCreateWithFlags(&gpu_stream_sync_event_, hipEventDisableTiming));
     }
   }
   /*! \brief destructor */
@@ -253,7 +253,7 @@ class GPUAuxStream {
     // If the aux_stream_ == primary_stream_, then we created no new streams to destroy.
     if (aux_stream_ != primary_stream_) {
       MSHADOW_CATCH_ERROR(mshadow::DeleteStream<gpu>(aux_stream_));
-      MSHADOW_CATCH_ERROR(cudaEventDestroy(gpu_stream_sync_event_));
+      MSHADOW_CATCH_ERROR(hipEventDestroy(gpu_stream_sync_event_));
     }
   }
   /*!
@@ -280,15 +280,15 @@ class GPUAuxStream {
    * \param s2 stream whose future work is made to wait on the completion of existing s1 work.
    * \param event used to pass s1 state to s2.
    */
-  static void StreamSync(mshadow::Stream<gpu> *s1, mshadow::Stream<gpu> *s2, cudaEvent_t event) {
-    MSHADOW_CUDA_CALL(cudaEventRecord(event, s1->stream_));
-    MSHADOW_CUDA_CALL(cudaStreamWaitEvent(s2->stream_, event, 0));
+  static void StreamSync(mshadow::Stream<gpu> *s1, mshadow::Stream<gpu> *s2, hipEvent_t event) {
+    MSHADOW_CUDA_CALL(hipEventRecord(event, s1->stream_));
+    MSHADOW_CUDA_CALL(hipStreamWaitEvent(s2->stream_, event, 0));
   }
 
  private:
   mshadow::Stream<gpu> *primary_stream_;
   mshadow::Stream<gpu> *aux_stream_;
-  cudaEvent_t gpu_stream_sync_event_;
+  hipEvent_t gpu_stream_sync_event_;
 };
 
 /*!
@@ -391,7 +391,7 @@ inline Context Context::Create(DeviceType dev_type, int32_t dev_id) {
     ctx.dev_id = 0;
     if (dev_type & kGPU) {
 #if MXNET_USE_CUDA
-      CHECK_EQ(cudaGetDevice(&ctx.dev_id), cudaSuccess);
+      CHECK_EQ(hipGetDevice(&ctx.dev_id), hipSuccess);
 #else
       LOG(FATAL) << "Please compile with CUDA enabled for cuda features";
 #endif
@@ -420,11 +420,11 @@ inline Context Context::GPU(int32_t dev_id) {
 inline int32_t Context::GetGPUCount() {
 #if MXNET_USE_CUDA
   int32_t count;
-  cudaError_t e = cudaGetDeviceCount(&count);
-  if (e == cudaErrorNoDevice) {
+  hipError_t e = hipGetDeviceCount(&count);
+  if (e == hipErrorNoDevice) {
     return 0;
   }
-  CHECK_EQ(e, cudaSuccess) << " CUDA: " << cudaGetErrorString(e);
+  CHECK_EQ(e, hipSuccess) << " CUDA: " << hipGetErrorString(e);
   return count;
 #else
   return 0;
@@ -445,20 +445,20 @@ inline void Context::GetGPUMemoryInformation(int dev, uint64_t *free_mem,
 #if MXNET_USE_CUDA
 
   size_t memF, memT;
-  cudaError_t e;
+  hipError_t e;
 
   int curDevice;
-  e = cudaGetDevice(&curDevice);
-  CHECK_EQ(e, cudaSuccess) << " CUDA: " << cudaGetErrorString(e);
+  e = hipGetDevice(&curDevice);
+  CHECK_EQ(e, hipSuccess) << " CUDA: " << hipGetErrorString(e);
 
-  e = cudaSetDevice(dev);
-  CHECK_EQ(e, cudaSuccess) << " CUDA: " << cudaGetErrorString(e);
+  e = hipSetDevice(dev);
+  CHECK_EQ(e, hipSuccess) << " CUDA: " << hipGetErrorString(e);
 
-  e = cudaMemGetInfo(&memF, &memT);
-  CHECK_EQ(e, cudaSuccess) << " CUDA: " << cudaGetErrorString(e);
+  e = hipMemGetInfo(&memF, &memT);
+  CHECK_EQ(e, hipSuccess) << " CUDA: " << hipGetErrorString(e);
 
-  e = cudaSetDevice(curDevice);
-  CHECK_EQ(e, cudaSuccess) << " CUDA: " << cudaGetErrorString(e);
+  e = hipSetDevice(curDevice);
+  CHECK_EQ(e, hipSuccess) << " CUDA: " << hipGetErrorString(e);
 
   *free_mem = static_cast<uint64_t>(memF);
   *total_mem = static_cast<uint64_t>(memT);

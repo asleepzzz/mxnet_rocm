@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -74,7 +75,7 @@ inline void image_pad_edge(Tensor<gpu, 4, DType> dst,
   int xGridSize = (dst.size(2) * dst.size(3) + 256 - 1) / 256;
   dim3 dimGrid(xGridSize, dst.size(1), dst.size(0));
   CheckLaunchParam(dimGrid, dimBlock, "Pad");
-  cudaStream_t stream = Stream<gpu>::GetStream(dst.stream_);
+  hipStream_t stream = Stream<gpu>::GetStream(dst.stream_);
   image_2d_pad_edge_kernel<kBaseThreadBits,
                            DType><<<dimGrid, dimBlock, 0, stream>>>(dst, src,
                                                                     padT, padL);
@@ -116,7 +117,7 @@ inline void image_pad_edge_grad(Tensor<gpu, 4, DType> grad_in,
   int xGridSize = (grad_out.size(2) * grad_out.size(3) + 256 - 1) / 256;
   dim3 dimGrid(xGridSize, grad_out.size(1), grad_out.size(0));
   CheckLaunchParam(dimGrid, dimBlock, "Pad");
-  cudaStream_t stream = Stream<gpu>::GetStream(grad_out.stream_);
+  hipStream_t stream = Stream<gpu>::GetStream(grad_out.stream_);
   image_2d_pad_edge_grad_kernel<kBaseThreadBits,
                                 DType><<<dimGrid, dimBlock, 0, stream>>>(
       grad_in, grad_out, padT, padL);
@@ -164,7 +165,7 @@ inline void image_pad_constant(Tensor<gpu, 4, DType> dst,
   int xGridSize = (dst.size(2) * dst.size(3) + 256 - 1) / 256;
   dim3 dimGrid(xGridSize, dst.size(1), dst.size(0));
   CheckLaunchParam(dimGrid, dimBlock, "Pad");
-  cudaStream_t stream = Stream<gpu>::GetStream(dst.stream_);
+  hipStream_t stream = Stream<gpu>::GetStream(dst.stream_);
   image_2d_pad_constant_kernel<kBaseThreadBits,
                                DType><<<dimGrid, dimBlock, 0, stream>>>(
       dst, src, padT, padL, constant);
@@ -201,7 +202,7 @@ inline void image_pad_constant_grad(Tensor<gpu, 4, DType> grad_in,
   int xGridSize = (grad_in.size(2) * grad_in.size(3) + 256 - 1) / 256;
   dim3 dimGrid(xGridSize, grad_in.size(1), grad_in.size(0));
   CheckLaunchParam(dimGrid, dimBlock, "Pad");
-  cudaStream_t stream = Stream<gpu>::GetStream(grad_in.stream_);
+  hipStream_t stream = Stream<gpu>::GetStream(grad_in.stream_);
   image_2d_pad_constant_grad_kernel<kBaseThreadBits,
                                     DType><<<dimGrid, dimBlock, 0, stream>>>(
       grad_in, grad_out, padT, padL);
@@ -257,7 +258,7 @@ inline void image_pad_reflect(Tensor<gpu, 4, DType> dst,
   int xGridSize = (dst.size(2) * dst.size(3) + 256 - 1) / 256;
   dim3 dimGrid(xGridSize, dst.size(1), dst.size(0));
   CheckLaunchParam(dimGrid, dimBlock, "Pad");
-  cudaStream_t stream = Stream<gpu>::GetStream(dst.stream_);
+  hipStream_t stream = Stream<gpu>::GetStream(dst.stream_);
   image_2d_pad_reflect_kernel<kBaseThreadBits,
                            DType><<<dimGrid, dimBlock, 0, stream>>>(dst, src,
                                                                     padT, padL);
@@ -308,7 +309,7 @@ inline void image_pad_reflect_grad(Tensor<gpu, 4, DType> grad_in,
   int xGridSize = (grad_out.size(2) * grad_out.size(3) + 256 - 1) / 256;
   dim3 dimGrid(xGridSize, grad_out.size(1), grad_out.size(0));
   CheckLaunchParam(dimGrid, dimBlock, "Pad");
-  cudaStream_t stream = Stream<gpu>::GetStream(grad_out.stream_);
+  hipStream_t stream = Stream<gpu>::GetStream(grad_out.stream_);
   image_2d_pad_reflect_grad_kernel<kBaseThreadBits,
                                 DType><<<dimGrid, dimBlock, 0, stream>>>(
       grad_in, grad_out, padT, padL);
@@ -367,7 +368,7 @@ inline void image_pad_edge(Tensor<gpu, 5, DType> dst,
   int xGridSize = (dst.size(2) * dst.size(3) * dst.size(4) + 256 - 1) / 256;
   dim3 dimGrid(xGridSize, dst.size(1), dst.size(0));
   CheckLaunchParam(dimGrid, dimBlock, "Pad");
-  cudaStream_t stream = Stream<gpu>::GetStream(dst.stream_);
+  hipStream_t stream = Stream<gpu>::GetStream(dst.stream_);
   image_3d_pad_edge_kernel<kBaseThreadBits,
                            DType><<<dimGrid, dimBlock, 0, stream>>>(
       dst, src, padF, padT, padL);
@@ -419,7 +420,7 @@ inline void image_pad_edge_grad(Tensor<gpu, 5, DType> grad_in,
       (grad_out.size(2) * grad_out.size(3) * grad_out.size(4) + 256 - 1) / 256;
   dim3 dimGrid(xGridSize, grad_out.size(1), grad_out.size(0));
   CheckLaunchParam(dimGrid, dimBlock, "Pad");
-  cudaStream_t stream = Stream<gpu>::GetStream(grad_out.stream_);
+  hipStream_t stream = Stream<gpu>::GetStream(grad_out.stream_);
   image_3d_pad_edge_grad_kernel<kBaseThreadBits,
                                 DType><<<dimGrid, dimBlock, 0, stream>>>(
       grad_in, grad_out, padF, padT, padL);
@@ -477,7 +478,7 @@ inline void image_pad_constant(Tensor<gpu, 5, DType> dst,
   int xGridSize = (dst.size(2) * dst.size(3) * dst.size(4) + 256 - 1) / 256;
   dim3 dimGrid(xGridSize, dst.size(1), dst.size(0));
   CheckLaunchParam(dimGrid, dimBlock, "Pad");
-  cudaStream_t stream = Stream<gpu>::GetStream(dst.stream_);
+  hipStream_t stream = Stream<gpu>::GetStream(dst.stream_);
   image_3d_pad_constant_kernel<kBaseThreadBits,
                                DType><<<dimGrid, dimBlock, 0, stream>>>(
       dst, src, padF, padT, padL, constant);
@@ -520,7 +521,7 @@ inline void image_pad_constant_grad(Tensor<gpu, 5, DType> grad_in,
       (grad_in.size(2) * grad_in.size(3) * grad_in.size(4) + 256 - 1) / 256;
   dim3 dimGrid(xGridSize, grad_in.size(1), grad_in.size(0));
   CheckLaunchParam(dimGrid, dimBlock, "Pad");
-  cudaStream_t stream = Stream<gpu>::GetStream(grad_in.stream_);
+  hipStream_t stream = Stream<gpu>::GetStream(grad_in.stream_);
   image_3d_pad_constant_grad_kernel<kBaseThreadBits,
                                     DType><<<dimGrid, dimBlock, 0, stream>>>(
       grad_in, grad_out, padF, padT, padL);
@@ -584,7 +585,7 @@ inline void image_pad_reflect(Tensor<gpu, 5, DType> dst,
   int xGridSize = (dst.size(2) * dst.size(3) * dst.size(4) + 256 - 1) / 256;
   dim3 dimGrid(xGridSize, dst.size(1), dst.size(0));
   CheckLaunchParam(dimGrid, dimBlock, "Pad");
-  cudaStream_t stream = Stream<gpu>::GetStream(dst.stream_);
+  hipStream_t stream = Stream<gpu>::GetStream(dst.stream_);
   image_3d_pad_reflect_kernel<kBaseThreadBits,
                            DType><<<dimGrid, dimBlock, 0, stream>>>(
       dst, src, padF, padT, padL);
@@ -677,7 +678,7 @@ inline void image_pad_reflect_grad(Tensor<gpu, 5, DType> grad_in,
       (grad_out.size(2) * grad_out.size(3) * grad_out.size(4) + 256 - 1) / 256;
   dim3 dimGrid(xGridSize, grad_out.size(1), grad_out.size(0));
   CheckLaunchParam(dimGrid, dimBlock, "Pad");
-  cudaStream_t stream = Stream<gpu>::GetStream(grad_out.stream_);
+  hipStream_t stream = Stream<gpu>::GetStream(grad_out.stream_);
   image_3d_pad_reflect_grad_kernel<kBaseThreadBits,
                                 DType><<<dimGrid, dimBlock, 0, stream>>>(
       grad_in, grad_out, padF, padT, padL);

@@ -39,7 +39,7 @@
 #include "../random/sampler.h"
 #include "../tensor/elemwise_binary_broadcast_op.h"
 
-#define MXNET_USE_MKL_DROPOUT defined(USE_MKL) && defined(_OPENMP) && !defined(__CUDACC__)
+#define MXNET_USE_MKL_DROPOUT defined(USE_MKL) && defined(_OPENMP) && !defined(__HIPCC__)
 #if MXNET_USE_MKL_DROPOUT
 #include <omp.h>
 
@@ -234,7 +234,7 @@ class DropoutOp {
 #endif  // MXNET_USE_CUDNN_DROPOUT
   }
 
-#if MXNET_USE_CUDNN_DROPOUT && defined(__CUDACC__)
+#if MXNET_USE_CUDNN_DROPOUT && defined(__HIPCC__)
   inline bool CuDNNAvailable() {
     return this->pkeep_ > 0 && !this->cudnn_off_;
   }
@@ -322,7 +322,7 @@ class DropoutOp {
                                       mask.dptr<DType>(),
                                       dropout_reserve_byte_));
   }
-#endif  // MXNET_USE_CUDNN_DROPOUT && defined(__CUDACC__)
+#endif  // MXNET_USE_CUDNN_DROPOUT && defined(__HIPCC__)
 
   void Forward(const OpContext &ctx,
                const std::vector<TBlob> &in_data,
@@ -347,12 +347,12 @@ class DropoutOp {
             return;
           }
 #endif  // MXNET_USE_MKL_DROPOUT
-#if MXNET_USE_CUDNN_DROPOUT && defined(__CUDACC__)
+#if MXNET_USE_CUDNN_DROPOUT && defined(__HIPCC__)
           if (CuDNNAvailable()) {
             CuDNNForward(ctx, in, mask, out);
             return;
           }
-#endif  // MXNET_USE_CUDNN_DROPOUT && defined(__CUDACC__)
+#endif  // MXNET_USE_CUDNN_DROPOUT && defined(__HIPCC__)
           RandGenerator<xpu, DType> *pgen = ctx.requested[0].get_parallel_random<xpu, DType>();
           CHECK_NOTNULL(pgen);
           CHECK(req[dropout::kOut] != kAddTo);
@@ -423,12 +423,12 @@ class DropoutOp {
           return;
         }
 #endif  // MXNET_USE_MKL_DROPOUT
-#if MXNET_USE_CUDNN_DROPOUT && defined(__CUDACC__)
+#if MXNET_USE_CUDNN_DROPOUT && defined(__HIPCC__)
         if (CuDNNAvailable()) {
           CuDNNBackward(ctx, grad, mask, gdata);
           return;
         }
-#endif  // MXNET_USE_CUDNN_DROPOUT && defined(__CUDACC__)
+#endif  // MXNET_USE_CUDNN_DROPOUT && defined(__HIPCC__)
         // standard case for dropout
         CHECK_EQ(grad.Size(), mask.Size());
         MXNET_ASSIGN_REQ_SWITCH(req[dropout::kData], Req, {

@@ -41,7 +41,7 @@ enum CuDNNBatchNormOpOutputs {kOut, kMean, kInvVar};
 enum CuDNNBatchNormOpAuxiliary {kMovingMean, kMovingInvVar};
 }  // namespace cudnnbatchnorm
 
-#if defined(__CUDACC__)
+#if defined(__HIPCC__)
 template<typename DType>
 class CuDNNBatchNormOp {
  public:
@@ -51,8 +51,8 @@ class CuDNNBatchNormOp {
     // For float16 input type beta, gamma, mean, and average are stored in float32.
     // For other input types, these parameters have the same type as input
     dtype_param_ = (dtype_ == CUDNN_DATA_HALF) ? kFloat32 : DataType<DType>::kFlag;
-    CUDNN_CALL(cudnnCreateTensorDescriptor(&io_desc_));
-    CUDNN_CALL(cudnnCreateTensorDescriptor(&mean_desc_));
+    CUDNN_CALL(miopenCreateTensorDescriptor(&io_desc_));
+    CUDNN_CALL(miopenCreateTensorDescriptor(&mean_desc_));
   }
 
   void Init(const BatchNormParam &param) {
@@ -62,8 +62,8 @@ class CuDNNBatchNormOp {
   }
 
   ~CuDNNBatchNormOp() {
-    CUDNN_CALL(cudnnDestroyTensorDescriptor(io_desc_));
-    CUDNN_CALL(cudnnDestroyTensorDescriptor(mean_desc_));
+    CUDNN_CALL(miopenDestroyTensorDescriptor(io_desc_));
+    CUDNN_CALL(miopenDestroyTensorDescriptor(mean_desc_));
   }
 
   void Forward(const OpContext &ctx,
@@ -121,7 +121,7 @@ class CuDNNBatchNormOp {
         Tensor<gpu, 1, DTypeParam> save_inv_var =
           out_data[cudnnbatchnorm::kInvVar]
           .get_with_shape<gpu, 1, DTypeParam>(Shape1(shape_[1]), s);
-        CUDNN_CALL(cudnnBatchNormalizationForwardTraining(s->dnn_handle_,
+        CUDNN_CALL(miopenBatchNormalizationForwardTraining(s->dnn_handle_,
                                                           mode,
                                                           &a,
                                                           &b,
@@ -139,7 +139,7 @@ class CuDNNBatchNormOp {
                                                           save_mean.dptr_,
                                                           save_inv_var.dptr_));
       } else {
-        CUDNN_CALL(cudnnBatchNormalizationForwardInference(s->dnn_handle_,
+        CUDNN_CALL(miopenBatchNormalizationForwardInference(s->dnn_handle_,
                                                            CUDNN_BATCHNORM_SPATIAL,
                                                            &a,
                                                            &b,
@@ -208,7 +208,7 @@ class CuDNNBatchNormOp {
 
       if (param_.fix_gamma) gamma = 1.f;
 
-      CUDNN_CALL(cudnnBatchNormalizationBackward(
+      CUDNN_CALL(miopenBatchNormalizationBackward(
         s->dnn_handle_,
         mode,
         &a,
@@ -249,7 +249,7 @@ class CuDNNBatchNormOp {
       CHECK_EQ(s->dnn_handle_ownership_, mshadow::Stream<gpu>::OwnHandle);
 
       if (param_.fix_gamma) gamma = 1.f;
-      CUDNN_CALL(cudnnBatchNormalizationBackward(s->dnn_handle_,
+      CUDNN_CALL(miopenBatchNormalizationBackward(s->dnn_handle_,
                                                  CUDNN_BATCHNORM_SPATIAL,
                                                  &a,
                                                  &b,
@@ -281,25 +281,25 @@ class CuDNNBatchNormOp {
       }
     }
 
-    CUDNN_CALL(cudnnSetTensor4dDescriptor(io_desc_,
+    CUDNN_CALL(miopenSet4dTensorDescriptor(io_desc_,
                                           CUDNN_TENSOR_NCHW,
                                           dtype_,
                                           shape_[0],
                                           shape_[1],
                                           shape_[2],
                                           shape_[3]));
-    CUDNN_CALL(cudnnDeriveBNTensorDescriptor(mean_desc_,
+    CUDNN_CALL(miopenDeriveBNTensorDescriptor(mean_desc_,
                                              io_desc_,
                                              CUDNN_BATCHNORM_SPATIAL));
   }
 
-  cudnnDataType_t dtype_;
+  miopenDataType_t dtype_;
   int dtype_param_;
-  cudnnTensorDescriptor_t io_desc_, mean_desc_;
+  miopenTensorDescriptor_t io_desc_, mean_desc_;
   mshadow::Shape<4> shape_;
   BatchNormParam param_;
 };
-#endif  // defined(__CUDACC__)
+#endif  // defined(__HIPCC__)
 
 #endif  // MXNET_USE_CUDNN == 1 && CUDNN_MAJOR >= 4
 }  // namespace op

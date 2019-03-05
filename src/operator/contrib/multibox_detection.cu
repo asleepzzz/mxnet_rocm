@@ -1,3 +1,5 @@
+#include "hip/hip_runtime.h"
+#include "hip/hip_runtime.h"
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -27,10 +29,10 @@
 #include <mshadow/cuda/tensor_gpu-inl.cuh>
 
 #define MULTIBOX_DETECTION_CUDA_CHECK(condition) \
-  /* Code block avoids redefinition of cudaError_t error */ \
+  /* Code block avoids redefinition of hipError_t error */ \
   do { \
-    cudaError_t error = condition; \
-    CHECK_EQ(error, cudaSuccess) << " " << cudaGetErrorString(error); \
+    hipError_t error = condition; \
+    CHECK_EQ(error, hipSuccess) << " " << hipGetErrorString(error); \
   } while (0)
 
 namespace mshadow {
@@ -224,13 +226,13 @@ inline void MultiBoxDetectionForward(const Tensor<gpu, 3, DType> &out,
   const int num_threads = cuda::kMaxThreadsPerBlock;
   int num_blocks = num_batches;
   cuda::CheckLaunchParam(num_blocks, num_threads, "MultiBoxDetection Forward");
-  cudaStream_t stream = Stream<gpu>::GetStream(out.stream_);
-  cuda::DetectionForwardKernel<<<num_blocks, num_threads, 0, stream>>>(out.dptr_,
+  hipStream_t stream = Stream<gpu>::GetStream(out.stream_);
+  cuda::hipLaunchKernelGGL((DetectionForwardKernel), dim3(num_blocks), dim3(num_threads), 0, stream, out.dptr_,
     cls_prob.dptr_, loc_pred.dptr_, anchors.dptr_, temp_space.dptr_,
     num_classes, num_anchors, threshold, clip,
     variances[0], variances[1], variances[2], variances[3],
     nms_threshold, force_suppress, nms_topk);
-  MULTIBOX_DETECTION_CUDA_CHECK(cudaPeekAtLastError());
+  MULTIBOX_DETECTION_CUDA_CHECK(hipPeekAtLastError());
 }
 }  // namespace mshadow
 

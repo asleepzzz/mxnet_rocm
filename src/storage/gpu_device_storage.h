@@ -29,7 +29,7 @@
 #include "mxnet/storage.h"
 #include "../common/cuda_utils.h"
 #if MXNET_USE_CUDA
-#include <cuda_runtime.h>
+#include <hip/hip_runtime.h>
 #endif  // MXNET_USE_CUDA
 #include <new>
 
@@ -62,9 +62,9 @@ inline void* GPUDeviceStorage::Alloc(Storage::Handle* handle) {
 #if MXNET_USE_NCCL
   std::lock_guard<std::mutex> l(Storage::Get()->GetMutex(Context::kGPU));
 #endif  // MXNET_USE_NCCL
-  cudaError_t e = cudaMalloc(&ret, size);
-  if (e != cudaSuccess && e != cudaErrorCudartUnloading)
-    LOG(FATAL) << "CUDA: " << cudaGetErrorString(e);
+  hipError_t e = hipMalloc(&ret, size);
+  if (e != hipSuccess && e != cudaErrorCudartUnloading)
+    LOG(FATAL) << "CUDA: " << hipGetErrorString(e);
 #else   // MXNET_USE_CUDA
   LOG(FATAL) << "Please compile with CUDA enabled";
 #endif  // MXNET_USE_CUDA
@@ -79,10 +79,10 @@ inline void GPUDeviceStorage::Free(Storage::Handle handle) {
   std::lock_guard<std::mutex> l(Storage::Get()->GetMutex(Context::kGPU));
 #endif  // MXNET_USE_NCCL
   // throw special exception for caller to catch.
-  cudaError_t err = cudaFree(ptr);
+  hipError_t err = hipFree(ptr);
   // ignore unloading error, as memory has already been recycled
-  if (err != cudaSuccess && err != cudaErrorCudartUnloading) {
-    LOG(FATAL) << "CUDA: " << cudaGetErrorString(err);
+  if (err != hipSuccess && err != cudaErrorCudartUnloading) {
+    LOG(FATAL) << "CUDA: " << hipGetErrorString(err);
   }
 #else   // MXNET_USE_CUDA
   LOG(FATAL) << "Please compile with CUDA enabled";

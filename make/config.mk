@@ -44,7 +44,7 @@ ifndef CXX
 export CXX = g++
 endif
 ifndef NVCC
-export NVCC = nvcc
+export NVCC = hipcc
 endif
 
 # whether compile with options for MXNet developer

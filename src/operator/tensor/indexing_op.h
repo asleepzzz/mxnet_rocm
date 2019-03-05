@@ -45,7 +45,7 @@
 #include "./init_op.h"
 #include "../../engine/openmp.h"
 #include "../../common/utils.h"
-#ifdef __CUDACC__
+#ifdef __HIPCC__
 #include "./indexing_op-inl.cuh"
 #endif
 
@@ -899,7 +899,7 @@ void TakeOpBackwardImpl(mshadow::Stream<cpu>* s,
   });
 }
 
-#ifdef __CUDACC__
+#ifdef __HIPCC__
 template<bool clip = true>
 void TakeOpBackwardImpl(mshadow::Stream<gpu>* s,
                         const OpContext& ctx,

@@ -177,7 +177,7 @@ void CudaModule::Kernel::Launch(
         block_dim_x, block_dim_y, block_dim_z,
         shared_mem, s->stream_,
         p_args.data(), 0));
-    CUDA_CALL(cudaStreamSynchronize(s->stream_));
+    CUDA_CALL(hipStreamSynchronize(s->stream_));
   }, ctx, read_vars, write_vars, FnProperty::kNormal, 0,
   mangled_name_.c_str());
 }

@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -178,7 +179,7 @@ inline void SoftmaxGrad(Stream<cpu> *s, OType *out, OType *ograd,
 }
 
 
-#ifdef __CUDACC__
+#ifdef __HIPCC__
 template<int x_bits, typename OP, bool negate, typename AType, int ndim,
   typename DType, typename OType>
 __global__ void softmax_compute_kernel(DType *in, OType *out, index_t M, int axis,
@@ -229,8 +230,7 @@ inline void Softmax(Stream<gpu> *s, DType *in, OType *out,
   Shape<ndim> sshape = shape;
   sshape[axis] = 1;
 
-  softmax_compute_kernel<x_bits, OP, negate, AType, ndim>
-    <<<N, x_size, 0, mshadow::Stream<gpu>::GetStream(s)>>>(
+  hipLaunchKernelGGL((softmax_compute_kernel<x_bits, OP, negate, AType, ndim>), dim3(N), dim3(x_size), 0, mshadow::Stream<gpu>::GetStream(s), 
       in, out, M, axis, sshape, stride, temperature);
   MSHADOW_CUDA_POST_KERNEL_CHECK(softmax_compute_kernel);
 }
@@ -281,8 +281,7 @@ inline void SoftmaxGrad(Stream<gpu> *s, OType *out, OType *ograd,
   Shape<ndim> sshape = shape;
   sshape[axis] = 1;
 
-  softmax_gradient_kernel<x_bits, OP1, OP2, Req, negate, AType, ndim>
-    <<<N, x_size, 0, mshadow::Stream<gpu>::GetStream(s)>>>(
+  hipLaunchKernelGGL((softmax_gradient_kernel<x_bits, OP1, OP2, Req, negate, AType, ndim>), dim3(N), dim3(x_size), 0, mshadow::Stream<gpu>::GetStream(s), 
       out, ograd, igrad, M, axis, sshape, stride, temperature);
   MSHADOW_CUDA_POST_KERNEL_CHECK(softmax_gradient_kernel);
 }

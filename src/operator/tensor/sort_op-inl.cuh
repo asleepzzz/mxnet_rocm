@@ -91,7 +91,7 @@ SortByKeyImpl(mshadow::Tensor<gpu, 1, KDType> keys,
   CHECK_EQ(keys.CheckContiguous(), true);
   CHECK_EQ(values.CheckContiguous(), true);
 #if CUDA_VERSION >= 7000
-  cudaStream_t stream = mshadow::Stream<gpu>::GetStream(keys.stream_);
+  hipStream_t stream = mshadow::Stream<gpu>::GetStream(keys.stream_);
 #ifndef SORT_WITH_THRUST
   if (workspace != NULL) {
     // Workspace given, sort using CUB
@@ -167,7 +167,7 @@ SortByKeyImpl(mshadow::Tensor<gpu, 1, KDType> keys,
   CHECK_EQ(keys.CheckContiguous(), true);
   CHECK_EQ(values.CheckContiguous(), true);
 #if CUDA_VERSION >= 9000
-  cudaStream_t stream = mshadow::Stream<gpu>::GetStream(keys.stream_);
+  hipStream_t stream = mshadow::Stream<gpu>::GetStream(keys.stream_);
   thrust::device_ptr<KDType> key_iter = thrust::device_pointer_cast(keys.dptr_);
   thrust::device_ptr<half> value_iter = thrust::device_pointer_cast(
     reinterpret_cast<half*>(values.dptr_));
@@ -196,7 +196,7 @@ SortByKeyImpl(mshadow::Tensor<gpu, 1, KDType> keys,
   CHECK_EQ(keys.CheckContiguous(), true);
   CHECK_EQ(values.CheckContiguous(), true);
 #if CUDA_VERSION >= 9000
-  cudaStream_t stream = mshadow::Stream<gpu>::GetStream(keys.stream_);
+  hipStream_t stream = mshadow::Stream<gpu>::GetStream(keys.stream_);
   thrust::device_ptr<half> key_iter = thrust::device_pointer_cast(
     reinterpret_cast<half*>(keys.dptr_));
   thrust::device_ptr<VDType> value_iter = thrust::device_pointer_cast(values.dptr_);
@@ -226,7 +226,7 @@ SortByKeyImpl(mshadow::Tensor<gpu, 1, KDType> keys,
   CHECK_EQ(keys.CheckContiguous(), true);
   CHECK_EQ(values.CheckContiguous(), true);
 #if CUDA_VERSION >= 9000
-  cudaStream_t stream = mshadow::Stream<gpu>::GetStream(keys.stream_);
+  hipStream_t stream = mshadow::Stream<gpu>::GetStream(keys.stream_);
   thrust::device_ptr<half> key_iter = thrust::device_pointer_cast(
     reinterpret_cast<half*>(keys.dptr_));
   thrust::device_ptr<half> value_iter = thrust::device_pointer_cast(
