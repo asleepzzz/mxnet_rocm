@@ -476,7 +476,7 @@ ifeq ($(USE_CUDA), 1)
         LDFLAGS += -L/opt/rocm/hipblas/lib  -lhipblas
         LDFLAGS += -L/opt/rocm/hiprand/lib  -lhiprand
         ifneq (, $(findstring nvcc, $(HIP_PLATFORM)))
-            CFLAGS  += -I$(ROOTDIR)/3rdparty/cub -I/opt/rocm/hipcub/include/hipcub/cub
+            CFLAGS  += -I$(ROOTDIR)/3rdparty/cub -I/opt/rocm/hipcub/include/
             LDFLAGS += -L/opt/rocm/rocfft/lib -lrocfft
             LDFLAGS += -lcudart -lcuda -lcufft -lcublas
             LDFLAGS += -L/usr/local/cuda/lib64/stubs
