@@ -48,10 +48,10 @@ extern __cuda_fake_struct blockIdx;
 #endif
 
 #if MXNET_USE_CUDA
-
+#include <hip-wrappers.h> // dummy include file placed in /opt/rocm/include
 #include <hip/hip_runtime.h>
-#include <cublas_v2.h>
-#include <curand.h>
+#include <hipblas.h>
+#include <hiprand.h>
 
 /*!
  * \brief When compiling a __device__ function, check that the architecture is >= Kepler (3.0)
@@ -87,21 +87,21 @@ inline __device__ bool __is_supported_cuda_architecture() {
 #define CUDA_CALL(func)                                            \
   {                                                                \
     hipError_t e = (func);                                        \
-    CHECK(e == hipSuccess || e == cudaErrorCudartUnloading)       \
+    CHECK(e == hipSuccess)       \
         << "CUDA: " << hipGetErrorString(e);                      \
   }
 
 /*!
- * \brief Protected cuBLAS call.
+ * \brief Protected hipBLAS call.
  * \param func Expression to call.
  *
  * It checks for cuBLAS errors after invocation of the expression.
  */
 #define CUBLAS_CALL(func)                                       \
   {                                                             \
-    cublasStatus_t e = (func);                                  \
-    CHECK_EQ(e, CUBLAS_STATUS_SUCCESS)                          \
-        << "cuBLAS: " << mxnet::common::cuda::CublasGetErrorString(e); \
+    hipblasStatus_t e = (func);                                  \
+    CHECK_EQ(e, HIPBLAS_STATUS_SUCCESS)                          \
+        << "hipBLAS: " << common::cuda::HipblasGetErrorString(e); \
   }
 
 /*!
@@ -118,16 +118,16 @@ inline __device__ bool __is_supported_cuda_architecture() {
   }
 
 /*!
- * \brief Protected cuRAND call.
+ * \brief Protected hipRAND call.
  * \param func Expression to call.
  *
- * It checks for cuRAND errors after invocation of the expression.
+ * It checks for hipRAND errors after invocation of the expression.
  */
-#define CURAND_CALL(func)                                       \
+#define HIPRAND_CALL(func)                                       \
   {                                                             \
-    curandStatus_t e = (func);                                  \
-    CHECK_EQ(e, CURAND_STATUS_SUCCESS)                          \
-        << "cuRAND: " << mxnet::common::cuda::CurandGetErrorString(e); \
+    hiprandStatus_t e = (func);                                  \
+    CHECK_EQ(e, HIPRAND_STATUS_SUCCESS)                          \
+        << "hipRAND: " << common::cuda::HiprandGetErrorString(e); \
   }
 
 /*!
@@ -177,34 +177,34 @@ namespace common {
 /*! \brief common utils for cuda */
 namespace cuda {
 /*!
- * \brief Get string representation of cuBLAS errors.
+ * \brief Get string representation of hipBLAS errors.
  * \param error The error.
  * \return String representation.
  */
-inline const char* CublasGetErrorString(cublasStatus_t error) {
+inline const char* HipblasGetErrorString(hipblasStatus_t error) {
   switch (error) {
-  case CUBLAS_STATUS_SUCCESS:
-    return "CUBLAS_STATUS_SUCCESS";
-  case CUBLAS_STATUS_NOT_INITIALIZED:
-    return "CUBLAS_STATUS_NOT_INITIALIZED";
-  case CUBLAS_STATUS_ALLOC_FAILED:
-    return "CUBLAS_STATUS_ALLOC_FAILED";
-  case CUBLAS_STATUS_INVALID_VALUE:
-    return "CUBLAS_STATUS_INVALID_VALUE";
-  case CUBLAS_STATUS_ARCH_MISMATCH:
-    return "CUBLAS_STATUS_ARCH_MISMATCH";
-  case CUBLAS_STATUS_MAPPING_ERROR:
-    return "CUBLAS_STATUS_MAPPING_ERROR";
-  case CUBLAS_STATUS_EXECUTION_FAILED:
-    return "CUBLAS_STATUS_EXECUTION_FAILED";
-  case CUBLAS_STATUS_INTERNAL_ERROR:
-    return "CUBLAS_STATUS_INTERNAL_ERROR";
-  case CUBLAS_STATUS_NOT_SUPPORTED:
-    return "CUBLAS_STATUS_NOT_SUPPORTED";
+  case HIPBLAS_STATUS_SUCCESS:
+    return "HIPBLAS_STATUS_SUCCESS";
+  case HIPBLAS_STATUS_NOT_INITIALIZED:
+    return "HIPBLAS_STATUS_NOT_INITIALIZED";
+  case HIPBLAS_STATUS_ALLOC_FAILED:
+    return "HIPBLAS_STATUS_ALLOC_FAILED";
+  case HIPBLAS_STATUS_INVALID_VALUE:
+    return "HIPBLAS_STATUS_INVALID_VALUE";
+  case HIPBLAS_STATUS_ARCH_MISMATCH:
+    return "HIPBLAS_STATUS_ARCH_MISMATCH";
+  case HIPBLAS_STATUS_MAPPING_ERROR:
+    return "HIPBLAS_STATUS_MAPPING_ERROR";
+  case HIPBLAS_STATUS_EXECUTION_FAILED:
+    return "HIPBLAS_STATUS_EXECUTION_FAILED";
+  case HIPBLAS_STATUS_INTERNAL_ERROR:
+    return "HIPBLAS_STATUS_INTERNAL_ERROR";
+  case HIPBLAS_STATUS_NOT_SUPPORTED:
+    return "HIPBLAS_STATUS_NOT_SUPPORTED";
   default:
     break;
   }
-  return "Unknown cuBLAS status";
+  return "Unknown hipBLAS status";
 }
 
 /*!
@@ -212,7 +212,7 @@ inline const char* CublasGetErrorString(cublasStatus_t error) {
  * \param error The error.
  * \return String representation.
  */
-inline const char* CusolverGetErrorString(cusolverStatus_t error) {
+/*inline const char* CusolverGetErrorString(cusolverStatus_t error) {
   switch (error) {
   case CUSOLVER_STATUS_SUCCESS:
     return "CUSOLVER_STATUS_SUCCESS";
@@ -234,43 +234,43 @@ inline const char* CusolverGetErrorString(cusolverStatus_t error) {
     break;
   }
   return "Unknown cuSOLVER status";
-}
+}*/
 
 /*!
- * \brief Get string representation of cuRAND errors.
+ * \brief Get string representation of hipRAND errors.
  * \param status The status.
  * \return String representation.
  */
-inline const char* CurandGetErrorString(curandStatus_t status) {
+inline const char* HiprandGetErrorString(hiprandStatus_t status) {
   switch (status) {
-  case CURAND_STATUS_SUCCESS:
-    return "CURAND_STATUS_SUCCESS";
-  case CURAND_STATUS_VERSION_MISMATCH:
-    return "CURAND_STATUS_VERSION_MISMATCH";
-  case CURAND_STATUS_NOT_INITIALIZED:
-    return "CURAND_STATUS_NOT_INITIALIZED";
-  case CURAND_STATUS_ALLOCATION_FAILED:
-    return "CURAND_STATUS_ALLOCATION_FAILED";
-  case CURAND_STATUS_TYPE_ERROR:
-    return "CURAND_STATUS_TYPE_ERROR";
-  case CURAND_STATUS_OUT_OF_RANGE:
-    return "CURAND_STATUS_OUT_OF_RANGE";
-  case CURAND_STATUS_LENGTH_NOT_MULTIPLE:
-    return "CURAND_STATUS_LENGTH_NOT_MULTIPLE";
-  case CURAND_STATUS_DOUBLE_PRECISION_REQUIRED:
-    return "CURAND_STATUS_DOUBLE_PRECISION_REQUIRED";
-  case CURAND_STATUS_LAUNCH_FAILURE:
-    return "CURAND_STATUS_LAUNCH_FAILURE";
-  case CURAND_STATUS_PREEXISTING_FAILURE:
-    return "CURAND_STATUS_PREEXISTING_FAILURE";
-  case CURAND_STATUS_INITIALIZATION_FAILED:
-    return "CURAND_STATUS_INITIALIZATION_FAILED";
-  case CURAND_STATUS_ARCH_MISMATCH:
-    return "CURAND_STATUS_ARCH_MISMATCH";
-  case CURAND_STATUS_INTERNAL_ERROR:
-    return "CURAND_STATUS_INTERNAL_ERROR";
+  case HIPRAND_STATUS_SUCCESS:
+    return "HIPRAND_STATUS_SUCCESS";
+  case HIPRAND_STATUS_VERSION_MISMATCH:
+    return "HIPRAND_STATUS_VERSION_MISMATCH";
+  case HIPRAND_STATUS_NOT_INITIALIZED:
+    return "HIPRAND_STATUS_NOT_INITIALIZED";
+  case HIPRAND_STATUS_ALLOCATION_FAILED:
+    return "HIPRAND_STATUS_ALLOCATION_FAILED";
+  case HIPRAND_STATUS_TYPE_ERROR:
+    return "HIPRAND_STATUS_TYPE_ERROR";
+  case HIPRAND_STATUS_OUT_OF_RANGE:
+    return "HIPRAND_STATUS_OUT_OF_RANGE";
+  case HIPRAND_STATUS_LENGTH_NOT_MULTIPLE:
+    return "HIPRAND_STATUS_LENGTH_NOT_MULTIPLE";
+//  case HIPRAND_STATUS_DOUBLE_PRECISION_REQUIRED: // NOT SUPPORTED YET
+//    return "HIPRAND_STATUS_DOUBLE_PRECISION_REQUIRED";
+  case HIPRAND_STATUS_LAUNCH_FAILURE:
+    return "HIPRAND_STATUS_LAUNCH_FAILURE";
+  case HIPRAND_STATUS_PREEXISTING_FAILURE:
+    return "HIPRAND_STATUS_PREEXISTING_FAILURE";
+  case HIPRAND_STATUS_INITIALIZATION_FAILED:
+    return "HIPRAND_STATUS_INITIALIZATION_FAILED";
+  case HIPRAND_STATUS_ARCH_MISMATCH:
+    return "HIPRAND_STATUS_ARCH_MISMATCH";
+  case HIPRAND_STATUS_INTERNAL_ERROR:
+    return "HIPRAND_STATUS_INTERNAL_ERROR";
   }
-  return "Unknown cuRAND status";
+  return "Unknown hipRAND status";
 }
 
 template <typename DType>
@@ -425,15 +425,15 @@ inline bool GetEnvAllowTensorCoreConversion() {
       .value();
 }
 
-#if CUDA_VERSION >= 9000
+/*#if CUDA_VERSION >= 9000
 // Sets the cuBLAS math mode that determines the 'allow TensorCore' policy.  Returns previous.
-inline cublasMath_t SetCublasMathMode(cublasHandle_t blas_handle, cublasMath_t new_math_type) {
+inline cublasMath_t SetCublasMathMode(hipblasHandle_t blas_handle, cublasMath_t new_math_type) {
   auto handle_math_mode = CUBLAS_DEFAULT_MATH;
-  CUBLAS_CALL(cublasGetMathMode(blas_handle, &handle_math_mode));
-  CUBLAS_CALL(cublasSetMathMode(blas_handle, new_math_type));
+  HIPBLAS_CALL(cublasGetMathMode(blas_handle, &handle_math_mode));
+  HIPBLAS_CALL(cublasSetMathMode(blas_handle, new_math_type));
   return handle_math_mode;
 }
-#endif
+#endif*/ //hip porting for the cublas apis not supported
 
 #endif  // MXNET_USE_CUDA
 

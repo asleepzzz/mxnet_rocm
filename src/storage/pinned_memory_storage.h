@@ -70,7 +70,7 @@ inline void PinnedMemoryStorage::Free(Storage::Handle handle) {
   mxnet::common::cuda::DeviceStore device_store(handle.ctx.real_dev_id(), true);
   hipError_t err = hipHostFree(ptr);
   // ignore unloading error, as memory has already been recycled
-  if (err != hipSuccess && err != cudaErrorCudartUnloading) {
+  if (err != hipSuccess) {
     LOG(FATAL) << "CUDA: " << hipGetErrorString(err);
   }
 }

@@ -81,10 +81,12 @@ void QuantizedFullyConnectedForwardGPU(const nnvm::NodeAttrs& attrs,
   const int m = dshape[0], n = dshape.ProdShape(1, dshape.ndim()), k = wshape[0];
   CmpType alpha = 1.0f;
   CmpType beta  = 0.0f;
-  const cudaDataType src_type = mshadow::DataType<SrcType>::kCudaFlag;
-  const cudaDataType dst_type = mshadow::DataType<DstType>::kCudaFlag;
-  const cudaDataType cmp_type = mshadow::DataType<CmpType>::kCudaFlag;
-  CUBLAS_CALL(cublasGemmEx(s->blas_handle_,
+  #if (CUDA_VERSION >= 8000) || defined(__HIP_PLATFORM_HCC__)
+  const hipDataType_t src_type = mshadow::DataType<SrcType>::kCudaFlag;
+  const hipDataType_t dst_type = mshadow::DataType<DstType>::kCudaFlag;
+  const hipDataType_t cmp_type = mshadow::DataType<CmpType>::kCudaFlag;
+  #endif
+  /*HIPBLAS_CALL(hipblasGemmEx(s->blas_handle_,
                            CUBLAS_OP_T,
                            CUBLAS_OP_N,
                            k,
@@ -102,7 +104,7 @@ void QuantizedFullyConnectedForwardGPU(const nnvm::NodeAttrs& attrs,
                            dst_type,
                            k,
                            cmp_type,
-                           CUBLAS_GEMM_DFALT));
+                           HIPBLAS_GEMM_DFALT));*/ //hipblasGemmEx and HIPBLAS_GEMM_DFALT are not supported
 
   Kernel<QuantizationRangeForMultiplicationStruct, gpu>::Launch(s, 1,
     outputs[1].dptr<float>(), outputs[2].dptr<float>(),
