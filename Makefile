@@ -57,7 +57,7 @@ ifneq ($(USE_OPENMP), 1)
 endif
 
 HIP_PLATFORM := $(shell hipconfig -P)
-
+HIPFLAGS = $(shell hipconfig -C)
 # use customized config file
 include $(config)
 
@@ -108,7 +108,7 @@ else
     MSHADOW_CFLAGS = -DMSHADOW_USE_CUDA=0 -DMSHADOW_USE_F16C=0
 endif
 
-HIPINCLUDE += -I. -I./3rdparty/Thrust -I/opt/rocm/hipblas/include -I/opt/rocm/hiprand/include -I/opt/rocm/hipfft/include -I/opt/rocm/hip/include
+HIPINCLUDE += -I. -I/opt/rocm/hipblas/include -I/opt/rocm/hiprand/include -I/opt/rocm/rocfft/include -I/opt/rocm/hipcub/include/
 
 CFLAGS += $(HIPINCLUDE) -Iinclude -I$(TPARTYDIR)/mshadow/ -I$(TPARTYDIR)/dmlc-core/include -fPIC -I$(TPARTYDIR)/tvm/include -I$(NNVM_PATH)/include -I$(DLPACK_PATH)/include -I$(NNVM_PATH)/tvm/include -Iinclude $(MSHADOW_CFLAGS)
 
@@ -143,15 +143,6 @@ ifeq ($(DEBUG), 1)
 else
 	NVCCFLAGS = $(CXXFLAGS) -Xcompiler -D_FORCE_INLINES -g -O3 $(CCBINCLUDES) $(MSHADOW_NVCCFLAGS)
 endif
-
-ifeq ($(HIP_PLATFORM), hcc)
-	HIPFLAGS = $(shell hipconfig -C)
-endif
-
-ifeq ($(HIP_PLATFORM), nvcc)
-	HIPFLAGS = $(shell hipconfig -C)
-endif
-
 
 
 # CFLAGS for segfault logger
@@ -484,13 +475,15 @@ ifeq ($(USE_CUDA), 1)
 	LDFLAGS += -L/opt/rocm/hip/lib -lhip_hcc
         LDFLAGS += -L/opt/rocm/hipblas/lib  -lhipblas
         LDFLAGS += -L/opt/rocm/hiprand/lib  -lhiprand
-        LDFLAGS += -L/opt/rocm/hcfft/lib -lhipfft
         ifneq (, $(findstring nvcc, $(HIP_PLATFORM)))
-            LDFLAGS += -L/opt/rocm/hcfft/lib -lhipfft
+            CFLAGS  += -I$(ROOTDIR)/3rdparty/cub -I/opt/rocm/hipcub/include/hipcub/cub
+            LDFLAGS += -L/opt/rocm/rocfft/lib -lrocfft
             LDFLAGS += -lcudart -lcuda -lcufft -lcublas
+            LDFLAGS += -L/usr/local/cuda/lib64/stubs
         else
             HIPINCLUDE += -I/opt/rocm/rocblas/include -I/opt/rocm/rocrand/include
-            LDFLAGS += -L/opt/rocm/hcfft/lib    -lhcfft
+            CFLAGS  += -I/opt/rocm/hipcub/include/hipcub/rocprim
+            LDFLAGS += -L/opt/rocm/rocfft/lib    -lrocfft
             LDFLAGS += -L/opt/rocm/rocblas/lib  -lrocblas
             LDFLAGS += -L/opt/rocm/rocrand/lib  -lrocrand
         endif

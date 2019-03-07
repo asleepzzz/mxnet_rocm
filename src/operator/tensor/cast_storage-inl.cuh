@@ -26,7 +26,7 @@
 #ifndef MXNET_OPERATOR_TENSOR_CAST_STORAGE_INL_CUH_
 #define MXNET_OPERATOR_TENSOR_CAST_STORAGE_INL_CUH_
 
-#include <cub/cub.cuh>
+#include <hipcub/hipcub.hpp>
 #include <mxnet/base.h>
 #include <mxnet/operator.h>
 #include "./util/tensor_util-inl.h"
@@ -97,7 +97,7 @@ void CastStorageDnsRspGPUImpl_(const OpContext& ctx,
   dim_t *row_flg = NULL;
   void *d_temp_storage = NULL;
   size_t temp_storage_bytes = 0;
-  cub::DeviceScan::InclusiveSum(d_temp_storage,
+  hipcub::DeviceScan::InclusiveSum(d_temp_storage,
                                 temp_storage_bytes,
                                 row_flg,
                                 row_flg,
@@ -154,7 +154,7 @@ void CastStorageDnsRspGPUImpl_(const OpContext& ctx,
       break;
   }
   // Compute non-zero row indices through inclusive prefix sum
-  cub::DeviceScan::InclusiveSum(d_temp_storage,
+  hipcub::DeviceScan::InclusiveSum(d_temp_storage,
                                 temp_storage_bytes,
                                 row_flg,
                                 row_flg,
@@ -291,7 +291,7 @@ struct CastDnsCsrIndPtrWarpKernel {
                                              const nnvm::dim_t num_rows,
                                              const nnvm::dim_t num_cols) {
     using nnvm::dim_t;
-    typedef cub::WarpReduce<dim_t> WarpReduce;
+    typedef hipcub::WarpReduce<dim_t> WarpReduce;
     const dim_t warps_per_block = mshadow::cuda::kBaseThreadNum / 32;
     __shared__ typename WarpReduce::TempStorage temp_storage[warps_per_block];
 
@@ -331,7 +331,7 @@ struct CastDnsCsrColIdxAndValsWarpKernel {
                                              const nnvm::dim_t num_rows,
                                              const nnvm::dim_t num_cols) {
     using nnvm::dim_t;
-    typedef cub::WarpScan<dim_t> WarpScan;
+    typedef hipcub::WarpScan<dim_t> WarpScan;
     const dim_t warps_per_block = mshadow::cuda::kBaseThreadNum / 32;
     __shared__ typename WarpScan::TempStorage temp_storage[warps_per_block];
     __shared__ volatile dim_t warp_nnz[warps_per_block];
@@ -384,7 +384,7 @@ struct CastDnsCsrIndPtrBlockKernel {
                                              const nnvm::dim_t num_cols) {
     using mshadow::cuda::kBaseThreadNum;
     using nnvm::dim_t;
-    typedef cub::BlockReduce<dim_t, kBaseThreadNum> BlockReduce;
+    typedef hipcub::BlockReduce<dim_t, kBaseThreadNum> BlockReduce;
     __shared__ typename BlockReduce::TempStorage temp_storage;
 
     if (tid == 0) {
@@ -421,7 +421,7 @@ struct CastDnsCsrColIdxAndValsBlockKernel {
                                              const nnvm::dim_t num_cols) {
     using mshadow::cuda::kBaseThreadNum;
     using nnvm::dim_t;
-    typedef cub::BlockScan<dim_t, kBaseThreadNum> BlockScan;
+    typedef hipcub::BlockScan<dim_t, kBaseThreadNum> BlockScan;
     __shared__ typename BlockScan::TempStorage temp_storage;
     __shared__ volatile dim_t block_nnz;
 
@@ -532,7 +532,7 @@ inline void CastStorageDnsCsrImpl(const OpContext& ctx,
         // Determine temporary device storage requirements
         void *d_temp_storage = NULL;
         size_t temp_storage_bytes = 0;
-        cub::DeviceScan::InclusiveSum(d_temp_storage,
+        hipcub::DeviceScan::InclusiveSum(d_temp_storage,
                                       temp_storage_bytes,
                                       indptr,
                                       indptr,
@@ -547,7 +547,7 @@ inline void CastStorageDnsCsrImpl(const OpContext& ctx,
        d_temp_storage = workspace.dptr_;
 
         // Compute indptr through inclusive prefix sum
-        cub::DeviceScan::InclusiveSum(d_temp_storage,
+        hipcub::DeviceScan::InclusiveSum(d_temp_storage,
                                       temp_storage_bytes,
                                       indptr,
                                       indptr,

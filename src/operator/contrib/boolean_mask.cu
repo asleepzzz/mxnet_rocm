@@ -22,7 +22,7 @@
 */
 
 #include "./boolean_mask-inl.h"
-#include <cub/cub.cuh>
+#include <hipcub/hipcub.hpp>
 
 namespace mxnet {
 namespace op {
@@ -52,7 +52,7 @@ inline void BooleanMaskForward<gpu>(const nnvm::NodeAttrs& attrs,
   void* d_temp_storage = nullptr;
   size_t temp_storage_bytes = 0;
   // Calculate total temporary memory size
-  cub::DeviceScan::InclusiveSum(d_temp_storage,
+  hipcub::DeviceScan::InclusiveSum(d_temp_storage,
                                 temp_storage_bytes,
                                 prefix_sum,
                                 prefix_sum,
@@ -70,7 +70,7 @@ inline void BooleanMaskForward<gpu>(const nnvm::NodeAttrs& attrs,
       s, idx.shape()[0], prefix_sum, idx.data().dptr<IType>());
   });
   // Calculate prefix sum
-  cub::DeviceScan::InclusiveSum(d_temp_storage,
+  hipcub::DeviceScan::InclusiveSum(d_temp_storage,
                                 temp_storage_bytes,
                                 prefix_sum,
                                 prefix_sum,
@@ -113,7 +113,7 @@ inline void BooleanMaskBackward<gpu>(const nnvm::NodeAttrs& attrs,
   void* d_temp_storage = nullptr;
   size_t temp_storage_bytes = 0;
   // Calculate total temporary memory size
-  cub::DeviceScan::InclusiveSum(d_temp_storage,
+  hipcub::DeviceScan::InclusiveSum(d_temp_storage,
                                 temp_storage_bytes,
                                 prefix_sum,
                                 prefix_sum,
@@ -131,7 +131,7 @@ inline void BooleanMaskBackward<gpu>(const nnvm::NodeAttrs& attrs,
       s, idx.shape()[0], prefix_sum, idx.data().dptr<IType>());
   });
   // Calculate prefix sum
-  cub::DeviceScan::InclusiveSum(d_temp_storage,
+  hipcub::DeviceScan::InclusiveSum(d_temp_storage,
                                 temp_storage_bytes,
                                 prefix_sum,
                                 prefix_sum,

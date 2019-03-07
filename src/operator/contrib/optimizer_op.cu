@@ -24,7 +24,7 @@
  * \author Leonard Lausen
  */
 #include "./optimizer_op-inl.h"
-#include <cub/cub.cuh>
+#include <hipcub/hipcub.hpp>
 
 namespace mxnet {
 namespace op {

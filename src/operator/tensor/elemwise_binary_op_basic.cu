@@ -22,7 +22,7 @@
  * \file elemwise_binary_op_basic.cu
  * \brief GPU Implementation of basic elementwise binary broadcast operators
  */
-#include <cub/cub.cuh>
+#include <hipcub/hipcub.hpp>
 #include "./elemwise_binary_op.h"
 #include "./elemwise_binary_op-inl.h"
 #include "./indexing_op.h"
@@ -92,7 +92,7 @@ void ElemwiseBinaryOp::RspRspOp(mshadow::Stream<gpu> *s,
         IType* common_row_table = NULL;
         void* temp_storage_ptr = NULL;
         size_t temp_storage_bytes = 0;
-        cub::DeviceScan::InclusiveSum(temp_storage_ptr,
+        hipcub::DeviceScan::InclusiveSum(temp_storage_ptr,
                                       temp_storage_bytes,
                                       common_row_table,
                                       common_row_table,
@@ -108,7 +108,7 @@ void ElemwiseBinaryOp::RspRspOp(mshadow::Stream<gpu> *s,
           s, lhs_nz_rows, common_row_table, lhs_indices.dptr<IType>(), lhs_nz_rows);
         Kernel<MarkRspRowFlgKernel, gpu>::Launch(
           s, rhs_nz_rows, common_row_table, rhs_indices.dptr<IType>(), rhs_nz_rows);
-        cub::DeviceScan::InclusiveSum(temp_storage_ptr,
+        hipcub::DeviceScan::InclusiveSum(temp_storage_ptr,
                                       temp_storage_bytes,
                                       common_row_table,
                                       common_row_table,
